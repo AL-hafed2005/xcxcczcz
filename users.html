@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>إدارة المستخدمين</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <h2>إدارة المستخدمين</h2>
+  <form id="addUserForm" style="max-width:350px;margin:auto;">
+    <input type="text" id="newUsername" placeholder="اسم المستخدم" required style="margin-bottom:10px;width:100%;padding:8px;">
+    <input type="password" id="newPassword" placeholder="كلمة المرور" required style="margin-bottom:10px;width:100%;padding:8px;">
+    <select id="newRole" required style="margin-bottom:10px;width:100%;padding:8px;">
+      <option value="">اختر الدور</option>
+      <option value="admin">مدير</option>
+      <option value="user">موظف</option>
+    </select>
+    <button type="submit" style="padding:10px 30px;">إضافة مستخدم</button>
+  </form>
+  <h3 style="text-align:center;margin-top:30px;">قائمة المستخدمين</h3>
+  <ul id="usersList" style="max-width:350px;margin:auto;"></ul>
+
+  <script>
+    // إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCnyLJmfaJZAW8c7_LaZo8G63UPWE3M6bs",
+      authDomain: "kasher-e52a0.firebaseapp.com",
+      projectId: "kasher-e52a0",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // إضافة مستخدم جديد
+    document.getElementById('addUserForm').onsubmit = function(e) {
+      e.preventDefault();
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      const role = document.getElementById('newRole').value;
+      if (!username || !password || !role) return;
+      db.collection("users").add({ username, password, role })
+        .then(() => {
+          alert("تمت إضافة المستخدم بنجاح");
+          document.getElementById('addUserForm').reset();
+          loadUsers();
+        })
+        .catch(err => alert("خطأ في الإضافة"));
+    };
+
+    // عرض المستخدمين
+    function loadUsers() {
+      db.collection("users").get().then(snapshot => {
+        const list = document.getElementById('usersList');
+        list.innerHTML = "";
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          const li = document.createElement('li');
+          li.textContent = `${user.username} - ${user.role}`;
+          list.appendChild(li);
+        });
+      });
+    }
+    loadUsers();
+  </script>
+<div class="sidebar">
+  <a href="about.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/shopping-cart.png" alt="نظام البيع"> نظام البيع
+  </a>
+  <a href="sale_reports.html" class="btn">
+    <img src="https://img.icons8.com/ios-filled/32/000000/sales-performance.png" alt="تقارير المبيعات"> تقارير المبيعات
+  </a>
+  <a href="users.html" class="btn active">
+    <img src="https://img.icons8.com/ios-filled/32/000000/add-user-group-man-man.png" alt="إدارة المستخدمين"> إدارة المستخدمين
+  </a>
+   <a href="itemad.html" class="btn">
+    <img src="https://img.icons8.com/ios-filled/32/000000/product.png" alt="ادارة المنتجات"> ادارة المنتجات
+  </a>
+  <a href="main.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/marker.png" alt="الرئيسية"> الفروع
+  </a>
+ 
+  <a href="contact.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/phone.png" alt="تواصل معنا"> تواصل معنا
+  </a>
+  <a href="index.html" class="btn" style="margin-top:auto;background:#d32f2f;color:#fff;">
+    <img src="https://img.icons8.com/ios-filled/32/ffffff/logout-rounded-left.png" alt="تسجيل خروج"> تسجيل خروج
+  </a>
+</div>
+</body>
+</html>

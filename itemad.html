@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>إضافة قطعة ملابس مع باركود ونص عربي وتخزين في Firebase</title>
+
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- JsBarcode -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+</head>
+<body>
+
+  <h2>إضافة قطعة ملابس مع باركود ونص عربي وتخزين في Firebase</h2>
+
+  <input type="text" id="itemName" placeholder="اسم القطعة" />
+  <input type="number" id="itemPrice" placeholder="السعر" />
+  <input type="number" id="itemQuantity" placeholder="عدد القطع" />
+
+  <select id="itemSize">
+    <option value="">اختر الحجم</option>
+    <option value="XL">XL</option>
+    <option value="XXL">XXL</option>
+    <option value="XXXL">XXXL</option>
+  </select>
+  <select id="itemGender">
+    <option value="">اختر الجنس</option>
+    <option value="ولادي">ولادي</option>
+    <option value="بناتي">بناتي</option>
+  </select>
+
+  <button onclick="addItem()">إضافة</button>
+
+  <h3>قائمة القطع:</h3>
+  <ul id="itemsList"></ul>
+
+  <script>
+    // ضع هنا بيانات Firebase الخاصة بمشروعك
+    const firebaseConfig = {
+      apiKey: "AIzaSyCnyLJmfaJZAW8c7_LaZo8G63UPWE3M6bs",
+      authDomain: "kasher-e52a0.firebaseapp.com",
+       projectId: "kasher-e52a0",
+      storageBucket: "kasher-e52a0.firebasestorage.app",
+      messagingSenderId: "424841509626",
+      appId: "1:424841509626:web:9578c33123e2fd6ff0e743",
+    };
+
+
+    // تهيئة Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let editItemId = null; // متغير لتخزين معرف العنصر الجاري تعديله
+
+    function addItem() {
+  const name = document.getElementById('itemName').value.trim();
+  const price = document.getElementById('itemPrice').value.trim();
+  const quantity = document.getElementById('itemQuantity').value.trim();
+  const size = document.getElementById('itemSize').value;
+  const gender = document.getElementById('itemGender').value;
+
+  if (!name || !price || !quantity || !size || !gender) {
+    alert('يرجى تعبئة جميع الحقول');
+    return;
+  }
+
+  if (editItemId) {
+    // تحديث العنصر
+    db.collection("items").doc(editItemId).update({
+      name,
+      price: Number(price),
+      quantity: Number(quantity),
+      size,
+      gender
+    })
+    .then(() => {
+      alert("تم تحديث القطعة بنجاح");
+      editItemId = null;
+      document.querySelector('button[onclick="addItem()"]').textContent = "إضافة";
+      loadItems();
+      document.getElementById('itemName').value = '';
+      document.getElementById('itemPrice').value = '';
+      document.getElementById('itemQuantity').value = '';
+      document.getElementById('itemSize').value = '';
+      document.getElementById('itemGender').value = '';
+    })
+    .catch(error => {
+      console.error("خطأ في تحديث القطعة: ", error);
+      alert("حدث خطأ أثناء التحديث");
+    });
+  } else {
+    // البحث عن عنصر مطابق
+    db.collection("items")
+      .where("name", "==", name)
+      .where("price", "==", Number(price))
+      .where("size", "==", size)
+      .where("gender", "==", gender)
+      .get()
+      .then(querySnapshot => {
+        if (!querySnapshot.empty) {
+          // يوجد عنصر مطابق: زيادة العدد فقط
+          const docRef = querySnapshot.docs[0].ref;
+          const oldQuantity = querySnapshot.docs[0].data().quantity || 0;
+          docRef.update({
+            quantity: Number(oldQuantity) + Number(quantity)
+          }).then(() => {
+            alert("تم تحديث العدد للقطعة الموجودة");
+            loadItems();
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemQuantity').value = '';
+            document.getElementById('itemSize').value = '';
+            document.getElementById('itemGender').value = '';
+          });
+        } else {
+          // لا يوجد عنصر مطابق: إضافة جديد
+          db.collection("items").add({
+            name,
+            price: Number(price),
+            quantity: Number(quantity),
+            size,
+            gender,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          })
+          .then(() => {
+            alert("تم إضافة القطعة بنجاح");
+            loadItems();
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemQuantity').value = '';
+            document.getElementById('itemSize').value = '';
+            document.getElementById('itemGender').value = '';
+          })
+          .catch(error => {
+            console.error("خطأ في إضافة القطعة: ", error);
+            alert("حدث خطأ، حاول مرة أخرى");
+          });
+        }
+      })
+      .catch(error => {
+        console.error("خطأ في البحث عن القطعة: ", error);
+        alert("حدث خطأ أثناء البحث");
+      });
+  }
+}
+
+
+    function loadItems() {
+      db.collection("items").orderBy("timestamp", "desc").get()
+      .then(querySnapshot => {
+        const list = document.getElementById('itemsList');
+        list.innerHTML = '';
+
+        querySnapshot.forEach((doc, index) => {
+          const item = doc.data();
+          const li = document.createElement('li');
+          const barcodeValue = 1000 + index;
+
+          li.innerHTML = `
+            <div><span class="label">اسم:</span> ${item.name}</div>
+            <div><span class="label">السعر:</span> ${item.price}</div>
+            <div><span class="label">العدد:</span> ${item.quantity ?? 'غير محدد'}</div>
+            <div><span class="label">الحجم:</span> ${item.size}</div>
+            <div><span class="label">الجنس:</span> ${item.gender}</div>
+            <svg id="barcode-${index}" class="barcode"></svg>
+            <div class="barcode-caption">${item.name}</div>
+            <button onclick="editItem('${doc.id}', '${item.name}', '${item.price}', '${item.quantity}', '${item.size}', '${item.gender}')">تعديل</button>
+           
+            <button onclick="printBarcodeMultiple('barcode-${index}', '${item.name}', ${item.quantity})">طباعة باركود حسب العدد</button>
+
+
+          `;
+
+          list.appendChild(li);
+
+          JsBarcode(`#barcode-${index}`, barcodeValue.toString(), {
+            format: "CODE128",
+            lineColor: "#2980b9",
+            width: 2,
+            height: 50,
+            displayValue: false
+          });
+        });
+      })
+      .catch(error => {
+        console.error("خطأ في جلب البيانات: ", error);
+      });
+    }
+
+    window.onload = () => {
+      loadItems();
+    };
+
+    function editItem(id, name, price, quantity, size, gender) {
+  document.getElementById('itemName').value = name;
+  document.getElementById('itemPrice').value = price;
+  document.getElementById('itemQuantity').value = quantity;
+  document.getElementById('itemSize').value = size;
+  document.getElementById('itemGender').value = gender;
+  editItemId = id;
+  document.querySelector('button[onclick="addItem()"]').textContent = "تحديث";
+}
+
+function printBarcodeMultiple(barcodeId, name, quantity) {
+  const originalContent = document.body.innerHTML;
+  const barcodeElement = document.getElementById(barcodeId);
+  
+  if (!barcodeElement) {
+    alert("لم يتم العثور على الباركود!");
+    return;
+  }
+  
+  if (!quantity || quantity <= 0) {
+    alert("عدد القطع غير صالح للطباعة");
+    return;
+  }
+
+  // بناء المحتوى للطباعة
+  const printContainer = document.createElement("div");
+  printContainer.style.textAlign = "center";
+  printContainer.style.direction = "rtl";
+  printContainer.style.margin = "50px";
+
+  // نكرر الباركود بعدد القطع
+  let barcodesHTML = `<h3>${name}</h3>`;
+  for (let i = 0; i < quantity; i++) {
+    barcodesHTML += barcodeElement.outerHTML + `<br><br>`;
+  }
+
+  printContainer.innerHTML = barcodesHTML;
+
+  // استبدال المحتوى مؤقتاً
+  document.body.innerHTML = printContainer.outerHTML;
+
+  window.print();
+
+  // إعادة الصفحة لمحتواها الأصلي
+  document.body.innerHTML = originalContent;
+
+  // إعادة تحميل العناصر والأحداث بعد الطباعة
+  loadItems();
+}
+
+
+  </script>
+  <div class="sidebar">
+  <a href="about.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/shopping-cart.png" alt="نظام البيع"> نظام البيع
+  </a>
+  <a href="sale_reports.html" class="btn">
+    <img src="https://img.icons8.com/ios-filled/32/000000/sales-performance.png" alt="تقارير المبيعات"> تقارير المبيعات
+  </a>
+  <a href="users.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/add-user-group-man-man.png" alt="إدارة المستخدمين"> إدارة المستخدمين
+  </a>
+   <a href="itemad.html" class="btn active">
+    <img src="https://img.icons8.com/ios-filled/32/000000/product.png" alt="ادارة المنتجات"> ادارة المنتجات
+  </a>
+  <a href="main.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/marker.png" alt="الرئيسية"> الفروع
+  </a>
+ 
+  <a href="contact.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/phone.png" alt="تواصل معنا"> تواصل معنا
+  </a>
+  <a href="index.html" class="btn" style="margin-top:auto;background:#d32f2f;color:#fff;">
+    <img src="https://img.icons8.com/ios-filled/32/ffffff/logout-rounded-left.png" alt="تسجيل خروج"> تسجيل خروج
+  </a>
+</div>
+</body>
+</html>

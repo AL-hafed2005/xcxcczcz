@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>تقارير المبيعات</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <h2>📊 تقارير المبيعات</h2>
+  <div id="reportsContainer"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCnyLJmfaJZAW8c7_LaZo8G63UPWE3M6bs",
+      authDomain: "kasher-e52a0.firebaseapp.com",
+      projectId: "kasher-e52a0",
+      storageBucket: "kasher-e52a0.firebasestorage.app",
+      messagingSenderId: "424841509626",
+      appId: "1:424841509626:web:9578c33123e2fd6ff0e743",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function loadReports() {
+      db.collection("salesReports").orderBy("timestamp", "desc").get()
+        .then(snapshot => {
+          const container = document.getElementById("reportsContainer");
+          container.innerHTML = '';
+
+          snapshot.forEach(doc => {
+            const report = doc.data();
+            const date = report.timestamp?.toDate().toLocaleString() || 'غير معروف';
+            let html = `<div class="report-box">
+              <p><strong>📅 التاريخ:</strong> ${date}</p>
+              <p><strong>👤 اسم الموظف:</strong> ${report.employee || 'غير معروف'}</p>
+
+              <ul>`;
+            report.items.forEach(item => {
+              html += `<li>${item.name} - ${item.price} × ${item.quantity}</li>`;
+            });
+            html += `</ul>
+              <p><strong>💰 المجموع:</strong> ${report.total.toFixed(2)} دينار</p>
+              <hr />
+            </div>`;
+            container.innerHTML += html;
+          });
+        })
+        .catch(err => {
+          console.error("خطأ في جلب التقارير:", err);
+        });
+    }
+
+    window.onload = loadReports;
+  </script>
+
+  <style>
+   
+    .report-box {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      background-color: #1b0943;
+    }
+  </style>
+<div class="sidebar">
+  <a href="about.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/shopping-cart.png" alt="نظام البيع"> نظام البيع
+  </a>
+  <a href="sale_reports.html" class="btn active">
+    <img src="https://img.icons8.com/ios-filled/32/000000/sales-performance.png" alt="تقارير المبيعات"> تقارير المبيعات
+  </a>
+  <a href="users.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/add-user-group-man-man.png" alt="إدارة المستخدمين"> إدارة المستخدمين
+  </a>
+   <a href="itemad.html" class="btn">
+    <img src="https://img.icons8.com/ios-filled/32/000000/product.png" alt="ادارة المنتجات"> ادارة المنتجات
+  </a>
+  <a href="main.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/marker.png" alt="الرئيسية"> الفروع
+  </a>
+ 
+  <a href="contact.html" class="btn ">
+    <img src="https://img.icons8.com/ios-filled/32/000000/phone.png" alt="تواصل معنا"> تواصل معنا
+  </a>
+  <a href="index.html" class="btn" style="margin-top:auto;background:#d32f2f;color:#fff;">
+    <img src="https://img.icons8.com/ios-filled/32/ffffff/logout-rounded-left.png" alt="تسجيل خروج"> تسجيل خروج
+  </a>
+</div>
+</body>
+</html>

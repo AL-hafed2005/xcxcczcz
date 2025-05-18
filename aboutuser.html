@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>واجهة البيع</title>
+  <link rel="stylesheet" href="style.css">
+
+
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- JsBarcode -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <!-- QuaggaJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+
+<body>
+
+  <h2>واجهة البيع</h2>
+
+  <!-- البحث والماسح -->
+  <div style="text-align: center; margin-bottom: 20px;">
+    <input type="text" id="searchInput" placeholder="ابحث باسم المنتج..." oninput="searchItems()" style="padding: 10px; font-size: 16px; width: 300px; border-radius: 8px; border: 1px solid #ccc;" />
+    <button onclick="startBarcodeScanner()" style="margin-right: 10px; padding: 10px 15px; font-size: 16px; border-radius: 8px; background-color: #2980b9; color: white; border: none;">📷 مسح الباركود</button>
+  </div>
+
+  <div id="scanner" style="display: none; margin-bottom: 20px; text-align: center;">
+    <video id="barcode-video" width="300" autoplay muted></video>
+  </div>
+
+  <ul id="itemsList"></ul>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCnyLJmfaJZAW8c7_LaZo8G63UPWE3M6bs",
+      authDomain: "kasher-e52a0.firebaseapp.com",
+      projectId: "kasher-e52a0",
+      storageBucket: "kasher-e52a0.firebasestorage.app",
+      messagingSenderId: "424841509626",
+      appId: "1:424841509626:web:9578c33123e2fd6ff0e743",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let globalItems = [];
+
+    function loadItems() {
+      db.collection("items").orderBy("timestamp", "desc").get()
+        .then(querySnapshot => {
+          const list = document.getElementById('itemsList');
+          list.innerHTML = '';
+          globalItems = [];
+
+          querySnapshot.forEach((doc, index) => {
+            const item = doc.data();
+            item.id = doc.id;
+            item.barcode = (1000 + index).toString();
+            globalItems.push(item);
+            const li = document.createElement('li');
+
+            li.innerHTML = `
+              <div><span class="label">اسم:</span> ${item.name}</div>
+              <div><span class="label">السعر:</span> ${item.price}</div>
+              <div><span class="label">العدد:</span> ${item.quantity}</div>
+              <div><span class="label">الحجم:</span> ${item.size}</div>
+              <div><span class="label">الجنس:</span> ${item.gender}</div>
+              <svg id="barcode-${index}" class="barcode"></svg>
+              <div class="barcode-caption">${item.name}</div>
+              <button class="add-to-cart-btn" onclick="addToCart('${item.id}')">🛒 أضف إلى السلة</button>
+              
+
+            `;
+
+            list.appendChild(li);
+
+            JsBarcode(`#barcode-${index}`, item.barcode, {
+              format: "CODE128",
+              lineColor: "#2980b9",
+              width: 2,
+              height: 50,
+              displayValue: false
+            });
+          });
+        })
+        .catch(error => {
+          console.error("خطأ في جلب البيانات: ", error);
+        });
+    }
+
+    function sellItem(id, name) {
+      const itemRef = db.collection("items").doc(id);
+      itemRef.get().then(doc => {
+        if (doc.exists) {
+          const item = doc.data();
+          let currentQuantity = item.quantity;
+          if (currentQuantity > 1) {
+            itemRef.update({ quantity: currentQuantity - 1 }).then(() => {
+              alert(`تم بيع القطعة: ${name}`);
+              loadItems();
+            });
+          } else {
+            itemRef.delete().then(() => {
+              alert(`تم بيع آخر قطعة من: ${name} وتم حذف العنصر`);
+              loadItems();
+            });
+          }
+        }
+      }).catch(error => {
+        console.error("خطأ أثناء البيع: ", error);
+      });
+    }
+
+    function searchItems() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      const items = document.querySelectorAll("#itemsList li");
+
+      items.forEach(item => {
+        const name = item.querySelector(".barcode-caption").textContent.toLowerCase();
+        item.style.display = name.includes(query) ? "flex" : "none";
+      });
+    }
+
+    function startBarcodeScanner() {
+      const scannerArea = document.getElementById("scanner");
+      scannerArea.style.display = "block";
+
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector('#barcode-video'),
+          constraints: { facingMode: "environment" }
+        },
+        decoder: {
+          readers: ["code_128_reader"]
+        }
+      }, function(err) {
+        if (err) {
+          console.error(err);
+          alert("تعذر فتح الكاميرا");
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected(data => {
+        const code = data.codeResult.code;
+        alert("تم مسح الباركود: " + code);
+
+        Quagga.stop();
+        scannerArea.style.display = "none";
+
+        const found = globalItems.find(item => item.barcode === code);
+        if (found) {
+          document.getElementById("searchInput").value = found.name;
+          searchItems();
+        } else {
+          alert("لم يتم العثور على المنتج بهذا الباركود");
+        }
+      });
+    }
+
+    window.onload = () => {
+      loadItems();
+    };
+
+    
+  </script>
+<script>
+  let cart = [];
+
+  function addToCart(itemId) {
+    const item = globalItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    const existing = cart.find(i => i.id === itemId);
+    if (existing) {
+      if (existing.selectedQty < item.quantity) {
+        existing.selectedQty += 1;
+      } else {
+        alert("لا يمكن إضافة أكثر من المتوفر في المخزون.");
+      }
+    } else {
+      cart.push({ ...item, selectedQty: 1 });
+    }
+    updateCartDisplay();
+  }
+
+  function updateCartDisplay() {
+  const cartList = document.getElementById("cartList");
+  const totalPriceElement = document.getElementById("totalPrice");
+  cartList.innerHTML = "";
+
+  let total = 0;
+
+  cart.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = `${item.name} - ${item.price} دينار × ${item.selectedQty} `;
+
+    // زر زيادة العدد
+    const plusBtn = document.createElement("button");
+    plusBtn.textContent = "+";
+    plusBtn.onclick = () => {
+      if (item.selectedQty < item.quantity) {
+        item.selectedQty += 1;
+        updateCartDisplay();
+      }
+    };
+
+    // زر إنقاص العدد
+    const minusBtn = document.createElement("button");
+    minusBtn.textContent = "-";
+    minusBtn.onclick = () => {
+      item.selectedQty -= 1;
+      if (item.selectedQty <= 0) {
+        cart = cart.filter(i => i.id !== item.id);
+      }
+      updateCartDisplay();
+    };
+
+    // زر حذف نهائي
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "❌";
+    removeBtn.style.marginRight = "10px";
+    removeBtn.onclick = () => removeFromCart(item.id);
+
+    li.appendChild(plusBtn);
+    li.appendChild(minusBtn);
+    li.appendChild(removeBtn);
+    cartList.appendChild(li);
+
+    total += parseFloat(item.price) * item.selectedQty;
+  });
+
+  totalPriceElement.textContent = `المجموع: ${total.toFixed(2)} دينار`;
+}
+
+
+  function removeFromCart(itemId) {
+    cart = cart.filter(item => item.id !== itemId);
+    updateCartDisplay();
+  }
+
+  function purchaseCart() {
+    if (cart.length === 0) {
+      alert("السلة فارغة.");
+      return;
+    }
+
+    const confirmPurchase = confirm("هل أنت متأكد من شراء كل العناصر؟");
+    if (!confirmPurchase) return;
+
+    const promises = cart.map(item => {
+      const itemRef = db.collection("items").doc(item.id);
+      return itemRef.get().then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data.quantity > item.selectedQty) {
+            return itemRef.update({ quantity: data.quantity - item.selectedQty });
+          } else {
+            return itemRef.delete();
+          }
+        }
+      });
+    });
+
+    // حفظ تقرير الشراء في Firestore
+const employeeName = document.getElementById("employeeName").value.trim();
+
+if (!employeeName) {
+  alert("يرجى إدخال اسم الموظف قبل تأكيد الشراء.");
+  return;
+}
+
+const saleData = {
+  employee: employeeName,
+  items: cart.map(item => ({
+    name: item.name,
+    price: item.price,
+    quantity: item.selectedQty
+  })),
+  total: cart.reduce((sum, item) => sum + (item.selectedQty * parseFloat(item.price)), 0),
+  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+};
+
+
+
+db.collection("salesReports").add(saleData).then(() => {
+  console.log("تم حفظ التقرير بنجاح");
+}).catch(error => {
+  console.error("خطأ في حفظ التقرير:", error);
+});
+
+  }
+</script>
+
+  <!-- أزرار التنقل الجانبية -->
+  <div class="sidebar">
+    <h1>نظام البيع</h1>
+    <a href="sale_reports.html" target="_blank" style="position: fixed; left: 20px; bottom: 20px; background-color: #2980b9; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none;">📊 تقارير المبيعات</a>
+     <a href="index.html" class="btn" style="margin-top:auto;background:#d32f2f;color:#fff;">
+      <img src="https://img.icons8.com/ios-filled/32/ffffff/logout-rounded-left.png" alt="تسجيل خروج"> تسجيل خروج
+    </a>
+  </div>
+<hr />
+<div id="cartContainer">
+  <h3>🛍️ سلة الشراء</h3>
+    <label for="employeeName">اسم الموظف:</label>
+  <input type="text" id="employeeName" placeholder="أدخل اسم الموظف" style="margin-bottom: 10px; padding: 5px; border-radius: 5px; border: 1px solid #ccc; display: block;" />
+  
+  <ul id="cartList"></ul>
+  <p id="totalPrice">المجموع: 0 دينار</p>
+  <button onclick="purchaseCart()">شراء الكل</button>
+</div>
+
+</body>
+</html>
