@@ -324,30 +324,32 @@ db.collection("salesReports").add(saleData).then(() => {
 </script>
 
   <!-- أزرار التنقل الجانبية -->
-
-<div class="sidebar">
-  <a href="about.html" class="btn active">
-    <img src="https://img.icons8.com/ios-filled/32/000000/shopping-cart.png" alt="نظام البيع"> نظام البيع
-  </a>
-  <a href="sale_reports.html" class="btn">
-    <img src="https://img.icons8.com/ios-filled/32/000000/sales-performance.png" alt="تقارير المبيعات"> تقارير المبيعات
-  </a>
-  <a href="users.html" class="btn ">
-    <img src="https://img.icons8.com/ios-filled/32/000000/add-user-group-man-man.png" alt="إدارة المستخدمين"> إدارة المستخدمين
-  </a>
-   <a href="itemad.html" class="btn">
-    <img src="https://img.icons8.com/ios-filled/32/000000/product.png" alt="ادارة المنتجات"> ادارة المنتجات
-  </a>
-  <a href="main.html" class="btn ">
-    <img src="https://img.icons8.com/ios-filled/32/000000/marker.png" alt="الرئيسية"> الفروع
-  </a>
- 
-  <a href="contact.html" class="btn ">
-    <img src="https://img.icons8.com/ios-filled/32/000000/phone.png" alt="تواصل معنا"> تواصل معنا
-  </a>
-  <a href="index.html" class="btn" style="margin-top:auto;background:#d32f2f;color:#fff;">
-    <img src="https://img.icons8.com/ios-filled/32/ffffff/logout-rounded-left.png" alt="تسجيل خروج"> تسجيل خروج
-  </a>
+<!-- قائمة منسدلة للتنقل -->
+<div class="dropdown-sidebar">
+  <button class="dropdown-toggle" onclick="toggleSidebar()">☰ القائمة</button>
+  <div id="sidebarMenu" class="dropdown-menu">
+    <a href="about.html" class="btn active" style="margin-bottom: 10px;">
+      <img src="https://img.icons8.com/ios-filled/32/000000/shopping-cart.png" alt="نظام البيع"> نظام البيع
+    </a>
+    <a href="sale_reports.html" class="btn" style="margin-bottom: 10px;">
+      <img src="https://img.icons8.com/ios-filled/32/000000/sales-performance.png" alt="تقارير المبيعات"> تقارير المبيعات
+    </a>
+    <a href="users.html" class="btn" style="margin-bottom: 10px;">
+      <img src="https://img.icons8.com/ios-filled/32/000000/add-user-group-man-man.png" alt="إدارة المستخدمين"> إدارة المستخدمين
+    </a>
+    <a href="itemad.html" class="btn" style="margin-bottom: 10px;">
+      <img src="https://img.icons8.com/ios-filled/32/000000/product.png" alt="ادارة المنتجات"> ادارة المنتجات
+    </a>
+    <a href="main.html" class="btn" style="margin-bottom: 10px;">
+      <img src="https://img.icons8.com/ios-filled/32/000000/marker.png" alt="الرئيسية"> الفروع
+    </a>
+    <a href="contact.html" class="btn" style="margin-bottom: 10px;">
+      <img src="https://img.icons8.com/ios-filled/32/000000/phone.png" alt="تواصل معنا"> تواصل معنا
+    </a>
+    <a href="index.html" class="btn" style="background:#d32f2f;color:#fff;">
+      <img src="https://img.icons8.com/ios-filled/32/ffffff/logout-rounded-left.png" alt="تسجيل خروج"> تسجيل خروج
+    </a>
+  </div>
 </div>
 <hr />
 <div id="cartContainer">
@@ -361,4 +363,18 @@ db.collection("salesReports").add(saleData).then(() => {
 </div>
 
 </body>
+<script>
+function toggleSidebar() {
+  var menu = document.getElementById('sidebarMenu');
+  menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+// إغلاق القائمة عند الضغط خارجها
+window.onclick = function(event) {
+  var menu = document.getElementById('sidebarMenu');
+  var btn = document.querySelector('.dropdown-toggle');
+  if (menu && event.target !== btn && !btn.contains(event.target)) {
+    menu.style.display = 'none';
+  }
+}
+</script>
 </html>

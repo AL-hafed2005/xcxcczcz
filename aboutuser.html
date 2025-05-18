@@ -296,7 +296,20 @@ db.collection("salesReports").add(saleData).then(() => {
 
   }
 </script>
-
+<script>
+function toggleSidebar() {
+  var menu = document.getElementById('sidebarMenu');
+  menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+// إغلاق القائمة عند الضغط خارجها
+window.onclick = function(event) {
+  var menu = document.getElementById('sidebarMenu');
+  var btn = document.querySelector('.dropdown-toggle');
+  if (menu && event.target !== btn && !btn.contains(event.target)) {
+    menu.style.display = 'none';
+  }
+}
+</script>
   <!-- أزرار التنقل الجانبية -->
   <div class="sidebar">
     <h1>نظام البيع</h1>

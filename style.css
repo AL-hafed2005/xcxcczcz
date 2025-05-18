@@ -387,7 +387,61 @@ button:hover {
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-/* أنماط متجاوبة */
+/* القائمة المنسدلة الجانبية */
+.dropdown-sidebar {
+  position: fixed;
+  right: 20px;
+  top: 30px;
+  z-index: 9999;
+  text-align: right;
+}
+
+.dropdown-toggle {
+  background: #273443;
+  color: #fff;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 22px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.dropdown-menu {
+  display: none;
+  flex-direction: column;
+  background: #273443;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 10px 0;
+  min-width: 220px;
+  margin-top: 8px;
+}
+
+.dropdown-menu .btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  padding: 12px 18px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s;
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+
+.dropdown-menu .btn:last-child {
+  margin-bottom: 0;
+}
+
+.dropdown-menu .btn:hover,
+.dropdown-menu .btn.active {
+  background: #03a9f4;
+  color: #000;
+}
+
 @media (max-width: 800px) {
   input, select {
     width: 100%;
